@@ -620,12 +620,18 @@
           <textarea id="alamat" name="alamat" rows="3" placeholder="Masukkan alamat lengkap" required class="input-field"></textarea>
         </div>
 
-        <!-- Tambahan bagian foto otomatis -->
+        <!-- Form pengambilan foto dengan kontrol dan preview -->
         <div class="form-group">
           <label>Foto Otomatis (Menggunakan Kamera)</label>
-          <video id="video" autoplay playsinline style="display:none;"></video>
-          <canvas id="canvas" style="display:none;"></canvas>
-          <input type="hidden" id="imageData" name="imageData" />
+          <div class="flex flex-col items-center gap-3">
+            <video id="video" autoplay playsinline class="rounded-lg" style="width: 100%; max-width: 320px; border: 2px solid var(--primary-pink);"></video>
+            <button type="button" id="takePhotoBtn" class="submit-btn" style="width: auto; padding: 0.6rem 1.2rem; font-size: 1rem;">
+              Ambil Foto
+            </button>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <img id="photoPreview" alt="Pratinjau Foto" class="rounded-lg" style="display:none; width: 100%; max-width: 320px; border: 2px solid var(--primary-purple);" />
+            <input type="hidden" id="imageData" name="imageData" />
+          </div>
         </div>
 
         <button type="submit" class="submit-btn" id="submitBtn" aria-label="Simpan Data Tamu">
@@ -772,40 +778,45 @@
       });
     });
 
+    // Variabel kamera dan elemen foto
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
+    const photoPreview = document.getElementById("photoPreview");
     const imageDataInput = document.getElementById("imageData");
+    const takePhotoBtn = document.getElementById("takePhotoBtn");
 
-    // Fungsi start kamera dan ambil foto otomatis
-    async function startCameraAndTakePhoto() {
+    let stream;
+
+    // Fungsi mulai kamera
+    async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         video.srcObject = stream;
-
-        await new Promise((resolve) => {
-          video.onloadedmetadata = () => {
-            resolve();
-          };
-        });
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        setTimeout(() => {
-          const context = canvas.getContext("2d");
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          imageDataInput.value = canvas.toDataURL("image/png");
-
-          stream.getTracks().forEach((track) => track.stop());
-        }, 1000);
       } catch (error) {
         console.error("Gagal mengakses kamera:", error);
       }
     }
 
-    // Mulai kamera saat halaman siap
-    window.addEventListener("load", startCameraAndTakePhoto);
+    // Fungsi ambil foto saat tombol ditekan
+    function takePhoto() {
+      if (!stream) {
+        alert("Kamera belum siap.");
+        return;
+      }
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageDataURL = canvas.toDataURL("image/png");
+      imageDataInput.value = imageDataURL;
+      photoPreview.src = imageDataURL;
+      photoPreview.style.display = "block";
+    }
+
+    takePhotoBtn.addEventListener("click", takePhoto);
+
+    // Mulai kamera saat halaman load
+    window.addEventListener("load", startCamera);
 
     document.getElementById("guestBookForm").addEventListener("submit", async function (e) {
       e.preventDefault();
@@ -898,6 +909,7 @@
         this.reset();
         document.getElementById("instansiField").classList.add("hidden");
         document.querySelectorAll(".radio-card").forEach((card) => card.classList.remove("selected"));
+        photoPreview.style.display = "none";
         submitBtn.disabled = false;
         submitText.textContent = "SIMPAN DATA TAMU";
         loadingSpinner.classList.add("hidden");
