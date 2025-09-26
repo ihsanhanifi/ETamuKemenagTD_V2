@@ -428,9 +428,10 @@
       outline: 4px solid var(--primary-pink);
     }
 
-     video#video {
-    transform: scaleX(1);
-  }
+    /* Pastikan kamera tidak mirror */
+    video#video {
+      transform: scaleX(1);
+    }
 
     /* Responsif untuk layar lebih besar */
     @media (min-width: 640px) {
@@ -952,4 +953,3 @@
 </body>
 
 </html>
-
